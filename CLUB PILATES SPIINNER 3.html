@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Club Pilates Spinner</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-image: url('spinner_background.jpg');
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: #f4faff;
+      overflow: hidden;
+    }
+
+    #wheel {
+      margin: 40px auto;
+      border: 10px solid #005da8;
+      border-radius: 50%;
+      width: 500px;
+      height: 500px;
+      position: relative;
+    }
+
+    #spin {
+      margin-top: 20px;
+      padding: 15px 30px;
+      font-size: 18px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #pointer {
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-bottom: 30px solid #005da8;
+      position: absolute;
+      top: -30px;
+      left: 220px;
+    }
+
+    #winner {
+      font-size: 20px;
+      margin-top: 20px;
+      color: #005da8;
+      font-weight: bold;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background-color: #007bff;
+      animation: fall 3s linear infinite;
+      top: 0;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🎉 Club Pilates Winner Spinner 🎉</h1>
+  <div id="wheel">
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <div id="pointer"></div>
+  </div>
+  <button id="spin">Spin the Wheel</button>
+  
+    <div id="winner"></div>
+    <div id="prize" style="display:none; font-size: 28px; color:#007bff; font-weight: bold; margin-top: 20px;">
+      🏅 Prize: $150 Retail Credit OR One Free Month of Pilates!
+    </div>
+    <div id="winner-banner" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background-color:rgba(255,255,255,0.95);z-index:1000;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+      <h1 style="font-size:60px;color:#005da8;">🎉 CONGRATS GINA ELLIOTT (HELOTES)! 🎉</h1>
+      <p style="font-size:30px;color:#333;margin-top:20px;">You've won $150 in retail credit or a free month of Pilates!</p>
+    </div>
+    
+  <audio id="spinSound" src="https://assets.mixkit.co/sfx/preview/mixkit-slot-machine-wheel-1934.mp3"></audio>
+
+  <script>
+    const names = ["Alayah Cantu", "Amanda Retikis", "Cindy Sanchez", "Claire Williams", "Laura Davis", "Lea Siewart", "Lynette Moczygemba", "Melissa Bridgehouse", "Michelle Wallace", "Pattie Smith", "Sandra Hernandez", "Shirley Wilks", "Susie Salim", "Tania Mendoza", "Teresa Hood", "Susie Villarreal", "Cat Monks", "Carla Bergner", "Crystal Johnson", "Daniela Giugea", "Deborah Burgess", "Elaine Lai", "Erin Davila", "Feiyi Ring", "Jacqueline Zarate", "Jessica Stewart", "Katie Gentel (SR)", "Kristina Santiago", "Lani Mararac", "Maria Velez", "Melina Quintanilla", "Sandy Mangum", "Sara Denny", "Shivani Patel", "Sylvia Trevino", "Tab Anderson", "Tina West-Yanez", "Victoria Farias", "Renata Pimentel", "Felicia Tavares", "Emily McMahon", "Cecilia Martinez", "Amanda Urias", "Therese Frentz", "Stephanie Larzelere", "Victoria Farias", "Vanessa Guitron", "Danielle Aleman", "Hannah Mozee", "Nikki Moore", "Nancy Boudreaux", "Jessica Hernandez", "Katie Allen", "Mary Wise", "Michelle Rodriguez", "Odetta Davis", "Brenda Beeler", "Lisa Warren", "Nimi Patel", "Karla North", "Debi Lambert", "Jacque Slay", "Linda Garcia", "Anahi McCraven", "Maggie Santillan", "Stephanie Edwards", "Paola Valdez", "Keri Robertson", "Angela Garcia", "Heidi Christensen", "Kaylin Blough", "Bri Ortiz", "Luanna Gracia", "Dee Ann Schofield", "Danitza Benavides", "Theresa Terry", "Penny Ausmus", "Lizzy Higdon", "Pinkey Patel", "Dana Lagman", "Vee Bhatt", "Margaret Lara", "Jennica Flores", "Jeanette Logan", "Cindy Garza", "Bernadette Benitez", "Darnella Patterson", "Erin Cantwell", "Mandy McTiernan", "Rebecca Arredondo", "Samantha Martinez", "Anissa Ramirez", "Terry Boesch", "Roxy Nieto", "Olga Cajas", "Aileen Viadiu", "Gabriela Prince", "Christina Holland", "Katie Gerlich", "Daniela Worthen", "Jianhong Su", "Stephanie Chapman", "Matea Manterola", "Kennedy Leach", "Samantha Almaraz", "Melanie Thizy", "Aleisha Berryhill", "Rochelle Malone", "April Vidal", "Ramona Barnes", "Vivian Villanueva", "Alyssa Grunloh", "Felicia Sandoval", "Penny Warnberg", "Sue Hannan", "Brandi Vega", "Brittany Vandiver", "Kaylin Blough", "Gina Elliott (Helotes)"];
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const spinSound = document.getElementById('spinSound');
+    const wheelRadius = 250;
+    let startAngle = 0;
+    let arc = Math.PI * 2 / names.length;
+
+    function drawWheel() {
+      for (let i = 0; i < names.length; i++) {
+        const angle = startAngle + i * arc;
+        ctx.fillStyle = i % 2 === 0 ? '#007bff' : '#339af0';
+        ctx.beginPath();
+        ctx.moveTo(wheelRadius, wheelRadius);
+        ctx.arc(wheelRadius, wheelRadius, wheelRadius, angle, angle + arc, false);
+        ctx.lineTo(wheelRadius, wheelRadius);
+        ctx.fill();
+        ctx.save();
+        ctx.translate(wheelRadius, wheelRadius);
+        ctx.rotate(angle + arc / 2);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 12px sans-serif";
+        ctx.fillText(names[i], 120, 0);
+        ctx.restore();
+      }
+    }
+
+    drawWheel();
+
+    const spinButton = document.getElementById('spin');
+    const winnerDisplay = document.getElementById('winner');
+
+    spinButton.onclick = function () {
+      spinButton.disabled = true;
+      spinSound.play();
+
+      const totalSpins = 10;
+      const winnerIndex = names.findIndex(n => n.includes("Gina Elliott"));
+      const spinAngle = (2 * Math.PI * totalSpins) + (Math.PI * 2 - (winnerIndex * arc) - arc / 2);
+      let duration = 5000;
+      let start = null;
+
+      function animate(timestamp) {
+        if (!start) start = timestamp;
+        const progress = timestamp - start;
+        const ease = 1 - Math.pow(1 - progress / duration, 4);
+        const angle = startAngle + spinAngle * ease;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        startAngle = angle;
+        drawWheel();
+
+        if (progress < duration) {
+          requestAnimationFrame(animate);
+        } else {
+          const name = names[winnerIndex];
+          
+    winnerDisplay.innerHTML = '';
+    document.getElementById('prize').style.display = 'block';
+    document.getElementById('winner-banner').style.display = 'flex';
+    setTimeout(() => {
+      startAngle = 0;
+      drawWheel();
+      spinButton.disabled = false;
+
+      document.getElementById('winner-banner').style.display = 'none';
+      document.getElementById('prize').style.display = 'none';
+      winnerDisplay.innerHTML = '';
+    }, 10000);
+    
+          showConfetti();
+          spinButton.disabled = false;
+        }
+      }
+
+      requestAnimationFrame(animate);
+    };
+
+    function showConfetti() {
+      for (let i = 0; i < 100; i++) {
+        const confetti = document.createElement('div');
+        confetti.classList.add('confetti');
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.backgroundColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+        confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 4000);
+      }
+    }
+  
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        document.getElementById('winner-banner').style.display = 'none';
+        document.getElementById('prize').style.display = 'none';
+        winnerDisplay.innerHTML = '';
+        startAngle = 0;
+        drawWheel();
+        spinButton.disabled = false;
+      }
+    });
+    </script>
+    
+</body>
+</html>
